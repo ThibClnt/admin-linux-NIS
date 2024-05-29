@@ -1,16 +1,48 @@
 #!/bin/bash
 
-if [ $# -ne 1 ]
+print_usage() {
+    echo "Usage: nis-create-users.sh --users <users> --hosts <hosts>"
+    exit 1
+}
+
+while [ $# -gt 0 ]
+do
+    key="$1"
+    case $key in
+        --users)
+            USERS="$2"
+            shift
+            ;;
+        --hosts)
+            HOSTS="$2"
+            shift
+            ;;
+        *)
+            print_usage
+            ;;
+    esac
+    shift
+done
+
+if [ -z "$USERS" ] || [ -z "$HOSTS" ]
 then
-    echo "Usage: $0 <filename>"
+    print_usage
+fi
+
+if [ ! -f $USERS ]
+then
+    echo "Error: File $USERS not found"
     exit 1
 fi
 
-if [ ! -r $1 ]
+if [ ! -f $HOSTS ]
 then
-    echo "Error: Cannot read file $1"
+    echo "Error: File $HOSTS not found"
     exit 1
 fi
+
+echo $USERS
+echo $HOSTS
 
 while IFS=: read -r name pwd dir
 do
@@ -32,17 +64,15 @@ do
         echo "$name:$pwd" | chpasswd &> /dev/null
     fi
 
-    home="/home/$name"
-
-    if [ -d $home ]; then
-        echo "  Directory $home already exists"
+    if [ -d $dir ]; then
+        echo "  Directory $dir already exists"
     else
-        echo "  Creating directory $home..."
-        mkdir -p $home
+        echo "  Creating directory $dir..."
+        mkdir -p $dir
     fi
 
-    chown $name:$name $home
-    chmod 750 $home
+    chown $name:$name $dir
+    chmod 750 $dir
 
     if [ "$(cat /etc/passwd | grep $name | cut -d: -f6)" == "$dir" ]
     then
@@ -52,12 +82,21 @@ do
         usermod -d $dir $name
     fi
 
-    host="*"
-    if (! grep -q "$home" /etc/exports)
-    then
-        echo "$home $host(rw)" >> /etc/exports
-    fi
-done < $1
+    while IFS= read -r host
+    do
+        if [ -z "$host" ]
+        then
+            continue
+        fi
+
+        echo "  Configuring $name:$dir for $host..."
+
+        if ! grep -q "$dir" /etc/exports
+        then
+            echo "$dir $host(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
+        fi
+    done < $HOSTS
+done < $USERS
 
 exportfs -a
 
