@@ -44,8 +44,9 @@ fi
 
 # Configure the technical user
 source ./src/nis-admin.sh
+# Delete removed users
 source ./src/nis-delete-users.sh $NIS_GROUP $USERS
-
+# Create or refresh users
 while IFS=: read -r name pwd dir
 do
     if [ -z "$name" ] || [ -z "$pwd" ] || [ -z "$dir" ]
@@ -58,26 +59,33 @@ do
     echo -e "\nConfiguring $name:$dir"
 
     # Create the user
-    if (! id -u $name > /dev/null 2>&1)
+    if (id -u $name > /dev/null 2>&1)
     then
+        echo -e "\tOK - user"
+    else 
         sudo useradd $name -g $NIS_GROUP
-        echo -e "\tUser $name created"
+        echo -e "\tCreated - user $name"
     fi
     # Update the password
     echo "$name:$pwd" | sudo chpasswd &> /dev/null
-    echo -e "\tPassword refreshed"
+    echo -e "\tSet - password"
     # Create the home directory
-    if [ ! -d $dir ]; then
-        echo -e "\tCreating directory $dir..."
+    if [ -d $dir ]
+    then
+        echo -e "\tOK - dir"
+    else
         sudo mkdir -p $dir
         sudo chown $name:$NIS_GROUP $dir
         sudo chmod 700 $dir
+        echo -e "\tCreated - dir $dir"
     fi
     # Set the home directory
-    if [ "$(cat /etc/passwd | grep $name | cut -d: -f6)" != "$dir" ]
+    if [ "$(cat /etc/passwd | grep $name | cut -d: -f6)" == "$dir" ]
     then
-        echo -e "\tSetting home directory of $name to $dir..."
+        echo -e "\tOK - ~$name = $dir"
+    else
         sudo usermod -d $dir $name
+        echo -e "\tSet - ~$name = $dir"
     fi
 
     while IFS= read -r host
@@ -87,8 +95,10 @@ do
             continue
         fi
 
-        if (! grep -q "$dir" /etc/exports)
+        if (grep -q "$dir" /etc/exports)
         then
+            echo -e "\tOK - /etc/exports"
+        else
             echo -e "\tConfiguring $name:$dir for $host..."
             echo "$dir $host(rw,sync,no_subtree_check,no_root_squash) #$name" | sudo tee -a /etc/exports
         fi

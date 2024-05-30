@@ -13,7 +13,7 @@
 groupName=$1
 groupId=$(getent group $groupName | cut -d: -f3)
 
-echo -e "Deleting removed users..."
+echo -e "\nDeleting removed users..."
 
 if [ -z "$groupId" ]
 then
@@ -25,8 +25,9 @@ fi
 do 
     if (! grep -q $user $2)
     then
-        echo -e "\tDeleting user $user"
-        sudo sed -i "/#$user/d" /etc/exports
         sudo userdel -r $user &> /dev/null
+        echo -e "\tDelete - user $user"
+        sudo sed -i "/#$user/d" /etc/exports
+        echo -e "\tDelete - /etc/exports"
     fi
 done
