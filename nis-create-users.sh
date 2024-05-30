@@ -44,6 +44,7 @@ fi
 
 # Configure the technical user
 source ./src/nis-admin.sh
+source ./src/nis-delete-users.sh $NIS_GROUP $USERS
 
 while IFS=: read -r name pwd dir
 do
@@ -89,7 +90,7 @@ do
         if (! grep -q "$dir" /etc/exports)
         then
             echo -e "\tConfiguring $name:$dir for $host..."
-            echo "$dir $host(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a /etc/exports
+            echo "$dir $host(rw,sync,no_subtree_check,no_root_squash) #$name" | sudo tee -a /etc/exports
         fi
     done < $HOSTS
 done < $USERS

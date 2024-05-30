@@ -1,6 +1,6 @@
 #!/bin/bash
 # NAME
-#       source ./nis-admin
+#       source ./src/nis-admin
 #
 # DESCRIPTION
 #       Create the technical user "nis-admin"
@@ -23,6 +23,7 @@ else
     sudo useradd $ADMIN_USR -p $ADMIN_PWD -M
     echo -e "\tCreated new user $ADMIN_USR";
 fi
+
 if (! getent group $NIS_GROUP > /dev/null 2>&1)
 then
     sudo groupadd $NIS_GROUP
