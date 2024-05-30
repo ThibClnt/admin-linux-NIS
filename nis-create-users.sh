@@ -126,7 +126,16 @@ do
     do
         echo "  Configuring $name:$dir for $host..."
         ssh "nis-admin@$host" "echo  $passwd | sudo -S mkdir -p $dir >/dev/null 2>&1" < /dev/null
-        ssh "nis-admin@$host" "echo $passwd | sudo -S sh -c 'grep -q \$(ypwhich):$dir /etc/fstab || echo \"\$(ypwhich):$dir $dir nfs default 0 2\" | sudo tee -a /etc/fstab' >/dev/null 2>&1" < /dev/null
+
+        # Store the remote command in a variable for readability
+        MNT_CONFIG_CMD="
+        if ! grep -q \"\$(ypwhich):$dir\" /etc/fstab; then
+            echo \"\$(ypwhich):$dir $dir nfs default 0 2\" | sudo tee -a /etc/fstab
+        fi
+        "
+
+        ssh nis-admin@"$host" "echo $passwd | sudo -S bash -c '$MNT_CONFIG_CMD' >/dev/null 2>&1" < /dev/null
     done < $USERS
+    
     ssh "nis-admin@$host" "echo  $passwd | sudo -S mount -a >/dev/null 2>&1" < /dev/null
 done < $HOSTS
