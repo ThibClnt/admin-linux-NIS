@@ -1,4 +1,5 @@
 #!/bin/bash
+#v2
 
 print_usage() {
     echo "Usage: nis-create-users.sh --users <users> --hosts <hosts>"
