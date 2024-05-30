@@ -21,6 +21,9 @@ then
     exit 1
 fi
 
+mkdir -p ./nis-state
+
+echo -e "" > ./nis-state/deleted-users.tmp
 (sudo grep ":$groupId::" /etc/passwd) | cut -d: -f1 | while read -r user
 do 
     if (! grep -q $user $2)
@@ -29,5 +32,6 @@ do
         echo -e "\tDelete - user $user"
         sudo sed -i "/#$user/d" /etc/exports
         echo -e "\tDelete - /etc/exports"
+        echo -e "$user" >> ./nis-state/deleted-users.tmp
     fi
 done
