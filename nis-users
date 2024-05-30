@@ -1,3 +1,5 @@
-albert:AL123!:/mnt/nfs/albert
-bertrand:BE123!:/mnt/nfs/bertrand
-christelle:CH123!:/mnt/nfs/christelle
+albert:AL123!:/home/efrei/albert
+bertrand:BE123!:/mnt/toto/bertrand
+christelle:CH123!:/home/efrei/christelle
+daniel:DA123!:/home/efrei/daniel
+eveline:EV123!:/mnt/toto/eveline
