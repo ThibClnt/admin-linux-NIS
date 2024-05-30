@@ -42,8 +42,8 @@ then
     exit 1
 fi
 
-echo $USERS
-echo $HOSTS
+# Configure the technical user
+source ./src/nis-admin.sh
 
 while IFS=: read -r name pwd dir
 do
@@ -54,35 +54,29 @@ do
         continue
     fi
 
-    echo "Configuring $name:$dir"
+    echo -e "\nConfiguring $name:$dir"
 
-    if (id -u $name > /dev/null 2>&1)
+    # Create the user
+    if (! id -u $name > /dev/null 2>&1)
     then
-        echo "  User $name already exists"        
-    else
-        echo "  Creating user $name..."
-        useradd $name
-        echo "$name:$pwd" | chpasswd &> /dev/null
+        sudo useradd $name -g $NIS_GROUP
+        echo -e "\tUser $name created"
     fi
-
-    home="/home/$name"
-
-    if [ -d $home ]; then
-        echo "  Directory $home already exists"
-    else
-        echo "  Creating directory $home..."
-        mkdir -p $home
+    # Update the password
+    echo "$name:$pwd" | sudo chpasswd &> /dev/null
+    echo -e "\tPassword refreshed"
+    # Create the home directory
+    if [ ! -d $dir ]; then
+        echo -e "\tCreating directory $dir..."
+        sudo mkdir -p $dir
+        sudo chown $name:$NIS_GROUP $dir
+        sudo chmod 700 $dir
     fi
-
-    chown $name:$name $home
-    chmod 750 $home
-
-    if [ "$(cat /etc/passwd | grep $name | cut -d: -f6)" == "$dir" ]
+    # Set the home directory
+    if [ "$(cat /etc/passwd | grep $name | cut -d: -f6)" != "$dir" ]
     then
-        echo "  Home directory of $name is already set to $dir"
-    else
-        echo "  Home directory of $name to $dir..."
-        usermod -d $dir $name
+        echo -e "\tSetting home directory of $name to $dir..."
+        sudo usermod -d $dir $name
     fi
 
     while IFS= read -r host
@@ -92,24 +86,23 @@ do
             continue
         fi
 
-        echo "  Configuring $name:$home for $host..."
-
-        if ! grep -q "$home" /etc/exports
+        if (! grep -q "$dir" /etc/exports)
         then
-            echo "$home $host(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
+            echo -e "\tConfiguring $name:$dir for $host..."
+            echo "$dir $host(rw,sync,no_subtree_check,no_root_squash)" | sudo tee -a /etc/exports
         fi
     done < $HOSTS
 done < $USERS
 
-exportfs -a
+sudo exportfs -a
 
-echo "Updating NIS maps..."
-systemctl restart ypserv
-make -C /var/yp > /dev/null
+echo -e "\nUpdating NIS maps..."
+sudo systemctl restart ypserv
+sudo make -C /var/yp > /dev/null
 
-echo "Restarting services..."
-systemctl restart ypserv
-systemctl restart yppasswdd
-systemctl restart nfs-server
+echo -e "\nRestarting services..."
+sudo systemctl restart ypserv
+sudo systemctl restart yppasswdd
+sudo systemctl restart nfs-server
 
 # TODO: configure the client via SSH to configure the NFS share and add a symbolic link to the home directory
