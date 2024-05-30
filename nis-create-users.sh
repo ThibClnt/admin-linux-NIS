@@ -75,10 +75,11 @@ do
         echo -e "\tOK - dir"
     else
         sudo mkdir -p $dir
-        sudo chown $name:$NIS_GROUP $dir
-        sudo chmod 700 $dir
         echo -e "\tCreated - dir $dir"
     fi
+    sudo chown $name:$NIS_GROUP $dir
+    sudo chmod 700 $dir
+    echo -e "\tSet - permissions for $dir"
     # Set the home directory
     if [ "$(cat /etc/passwd | grep $name | cut -d: -f6)" == "$dir" ]
     then
@@ -116,4 +117,22 @@ sudo systemctl restart ypserv
 sudo systemctl restart yppasswdd
 sudo systemctl restart nfs-server
 
-# TODO: configure the client via SSH to configure the NFS share and add a symbolic link to the home directory
+passwd="nis-admin"
+while IFS= read -r host
+do
+    if [ -z "$host" ]
+    then
+        continue
+    fi
+
+    echo "Configuring client $host..."
+    ssh "nis-admin@$host" "echo $passwd | sudo -S systemctl restart ypbind >/dev/null 2>&1" < /dev/null
+
+    while IFS=: read -r name pwd dir
+    do
+        echo "  Configuring $name:$dir for $host..."
+        ssh "nis-admin@$host" "echo  $passwd | sudo -S mkdir -p $dir >/dev/null 2>&1" < /dev/null
+        ssh "nis-admin@$host" "echo $passwd | sudo -S sh -c 'grep -q \$(ypwhich):$dir /etc/fstab || echo \"\$(ypwhich):$dir $dir nfs default 0 2\" | sudo tee -a /etc/fstab' >/dev/null 2>&1" < /dev/null
+    done < $USERS
+    ssh "nis-admin@$host" "echo  $passwd | sudo -S mount -a >/dev/null 2>&1" < /dev/null
+done < $HOSTS
