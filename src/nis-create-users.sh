@@ -1,57 +1,29 @@
 #!/bin/bash
-#v2
+# NAME
+#       ./source/nis-create-users.sh
+#
+# DESCRIPTION
+#       Create or refresh users
+#
+# PARAMETERS
+#       arg1: group name (nis-managed)
+#       arg2: users config file path
+#       arg3: hosts config file path 
+#       arg4: admin user name
+#
 
-print_usage() {
-    echo "Usage: nis-create-users.sh --users <users> --hosts <hosts>"
-    exit 1
-}
 
-while [ $# -gt 0 ]
-do
-    key="$1"
-    case $key in
-        --users)
-            USERS="$2"
-            shift
-            ;;
-        --hosts)
-            HOSTS="$2"
-            shift
-            ;;
-        *)
-            print_usage
-            ;;
-    esac
-    shift
-done
+NIS_GROUP=$1
+USERS=$2
+HOSTS=$3
+ADMIN_USR=$4
 
-if [ -z "$USERS" ] || [ -z "$HOSTS" ]
-then
-    print_usage
-fi
-
-if [ ! -f $USERS ]
-then
-    echo "Error: File $USERS not found"
-    exit 1
-fi
-
-if [ ! -f $HOSTS ]
-then
-    echo "Error: File $HOSTS not found"
-    exit 1
-fi
-
-# Configure the technical user
-source ./src/nis-admin.sh
-# Delete removed users
-source ./src/nis-delete-users.sh $NIS_GROUP $USERS
 # Create or refresh users
 while IFS=: read -r name pwd dir
 do
     if [ -z "$name" ] || [ -z "$pwd" ] || [ -z "$dir" ]
     then
-        echo "Error: Invalid line format in $1: $name:$pwd:$dir"
+        echo "Error: Invalid line format in $USERS: $name:$pwd:$dir"
         echo "Valid format is <name>:<password>:<directory>"
         continue
     fi

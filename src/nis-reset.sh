@@ -20,4 +20,18 @@ done
 echo -e "\n" | sudo tee /etc/exports
 echo -e "\tEmptied - /etc/exports"
 
+
+
+echo -e "\nUpdating NIS maps..."
+sudo exportfs -a
+sudo systemctl restart ypserv
+sudo make -C /var/yp > /dev/null
+
+echo -e "\nRestarting services..."
+sudo systemctl restart ypserv
+sudo systemctl restart yppasswdd
+sudo systemctl restart nfs-server
+
+
+
 echo -e "NIS reset complete."
