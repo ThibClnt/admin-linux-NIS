@@ -64,15 +64,17 @@ do
         echo "$name:$pwd" | chpasswd &> /dev/null
     fi
 
-    if [ -d $dir ]; then
-        echo "  Directory $dir already exists"
+    home="/home/$name"
+
+    if [ -d $home ]; then
+        echo "  Directory $home already exists"
     else
-        echo "  Creating directory $dir..."
-        mkdir -p $dir
+        echo "  Creating directory $home..."
+        mkdir -p $home
     fi
 
-    chown $name:$name $dir
-    chmod 750 $dir
+    chown $name:$name $home
+    chmod 750 $home
 
     if [ "$(cat /etc/passwd | grep $name | cut -d: -f6)" == "$dir" ]
     then
@@ -89,11 +91,11 @@ do
             continue
         fi
 
-        echo "  Configuring $name:$dir for $host..."
+        echo "  Configuring $name:$home for $host..."
 
-        if ! grep -q "$dir" /etc/exports
+        if ! grep -q "$home" /etc/exports
         then
-            echo "$dir $host(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
+            echo "$home $host(rw,sync,no_subtree_check,no_root_squash)" >> /etc/exports
         fi
     done < $HOSTS
 done < $USERS
@@ -109,4 +111,4 @@ systemctl restart ypserv
 systemctl restart yppasswdd
 systemctl restart nfs-server
 
-# TODO: configure the client via SSH to use the NIS server and to restart services
+# TODO: configure the client via SSH to configure the NFS share and add a symbolic link to the home directory
