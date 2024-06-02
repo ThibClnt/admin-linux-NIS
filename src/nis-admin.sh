@@ -13,6 +13,7 @@
 echo -e "Configuring technical user (nis-admin)..."
 
 export ADMIN_USR="nis-admin"
+export ADMIN_PWD="nis-admin"
 export NIS_GROUP="nis-managed"
 
 

@@ -1,4 +1,4 @@
-
+#!/bin/bash
 print_usage() {
     echo "Usage: nis-manager.sh --users <users> --hosts <hosts>"
     exit 1
@@ -41,11 +41,11 @@ then
 fi
 
 # Configure the technical user
-# Exports: $ADMIN_USR, $NIS_GROUP
+# Exports: $ADMIN_PWD, $NIS_GROUP
 source ./src/nis-admin.sh
 
 # Delete removed users
 source ./src/nis-delete-users.sh $NIS_GROUP $USERS
 
 # Create or refresh users
-source ./src/nis-create-users.sh $NIS_GROUP $USERS $HOSTS $ADMIN_USR
+source ./src/nis-create-users.sh $NIS_GROUP $USERS $HOSTS $ADMIN_PWD

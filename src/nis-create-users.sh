@@ -1,4 +1,5 @@
 #!/bin/bash
+#!/bin/bash
 # NAME
 #       ./source/nis-create-users.sh
 #
@@ -16,7 +17,7 @@
 NIS_GROUP=$1
 USERS=$2
 HOSTS=$3
-ADMIN_USR=$4
+ADMIN_PWD=$4
 
 # Create or refresh users
 while IFS=: read -r name pwd dir
@@ -97,12 +98,12 @@ do
     fi
 
     echo "Configuring client $host..."
-    ssh "nis-admin@$host" "echo $ADMIN_USR | sudo -S systemctl restart ypbind >/dev/null 2>&1" < /dev/null
+    ssh "nis-admin@$host" "echo $ADMIN_PWD | sudo -S systemctl restart ypbind >/dev/null 2>&1" < /dev/null
 
     while IFS=: read -r name pwd dir
     do
         echo "  Configuring $name:$dir for $host..."
-        ssh "nis-admin@$host" "echo  $ADMIN_USR | sudo -S mkdir -p $dir >/dev/null 2>&1" < /dev/null
+        ssh "nis-admin@$host" "echo  $ADMIN_PWD | sudo -S mkdir -p $dir >/dev/null 2>&1" < /dev/null
 
         # Store the remote command in a variable for readability
         MNT_CONFIG_CMD="
@@ -111,8 +112,8 @@ do
         fi
         "
 
-        ssh nis-admin@"$host" "echo $ADMIN_USR | sudo -S bash -c '$MNT_CONFIG_CMD' >/dev/null 2>&1" < /dev/null
+        ssh nis-admin@"$host" "echo $ADMIN_PWD | sudo -S bash -c '$MNT_CONFIG_CMD' >/dev/null 2>&1" < /dev/null
     done < $USERS
     
-    ssh "nis-admin@$host" "echo  $ADMIN_USR | sudo -S mount -a >/dev/null 2>&1" < /dev/null
+    ssh "nis-admin@$host" "echo  $ADMIN_PWD | sudo -S mount -a >/dev/null 2>&1" < /dev/null
 done < $HOSTS
